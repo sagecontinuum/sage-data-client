@@ -13,4 +13,7 @@ df = sage_data_client.query(
 
 # print results in data frame
 print(df)
+
+# meta columns are expanded into meta.fieldname. for example, here we print the unique nodes
+print(df["meta.node"].unique())
 ```
