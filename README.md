@@ -3,7 +3,7 @@
 This is the official Sage Python data API client. Its main goal is to make writing queries and working with the results easy. It does this by:
 
 1. Providing a simple query function which talks to the data API.
-2. Providing the results in an easy to use Pandas data frame.
+2. Providing the results in an easy to use [Pandas](https://pandas.pydata.org) data frame.
 
 ## Usage Example
 
