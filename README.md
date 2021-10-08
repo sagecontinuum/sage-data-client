@@ -5,6 +5,22 @@ This is the official Sage Python data API client. Its main goal is to make writi
 1. Providing a simple query function which talks to the data API.
 2. Providing the results in an easy to use [Pandas](https://pandas.pydata.org) data frame.
 
+## Installation
+
+1. Go to the [latest release page](https://github.com/sagecontinuum/sage-data-client/releases/latest).
+
+2. Copy the URL for `sage_data_client*.whl` asset. For example:
+
+```
+https://github.com/sagecontinuum/sage-data-client/releases/download/0.1.0/sage_data_client-0.1.0-py3-none-any.whl
+```
+
+3. Run `pip3 install url`. For example:
+
+```
+pip3 install https://github.com/sagecontinuum/sage-data-client/releases/download/0.1.0/sage_data_client-0.1.0-py3-none-any.whl
+```
+
 ## Usage Example
 
 ```python
