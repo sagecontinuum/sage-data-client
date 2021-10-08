@@ -17,7 +17,7 @@ https://github.com/sagecontinuum/sage-data-client/releases/download/0.1.0/sage_d
 pip3 install https://github.com/sagecontinuum/sage-data-client/releases/download/0.1.0/sage_data_client-0.1.0-py3-none-any.whl
 ```
 
-## Usage Example
+## Usage Examples
 
 ```python
 import sage_data_client
@@ -37,5 +37,29 @@ print(df)
 print(df["meta.node"].unique())
 
 # print stats of the temperature data grouped by node + sensor.
-print(df.groupby(["meta.node", "meta.sensor"]).value.agg(["min", "max", "mean"]))
+print(df.groupby(["meta.node", "meta.sensor"]).value.agg(["size", "min", "max", "mean"]))
 ```
+
+```python
+import sage_data_client
+
+# query and load data into pandas data frame
+df = sage_data_client.query(
+    start="-1h",
+    filter={
+        "name": "env.raingauge.*",
+    }
+)
+
+# print number of results of each name
+print(df.groupby(["meta.node", "name"]).size())
+```
+
+## Reference
+
+The `query` function accepts the following arguments:
+
+* `start`. Absolute or relative start timestamp. (**required**)
+* `end`. Absolute or relative start timestamp.
+* `tail`. Number of more recent results to return.
+* `filter`. Key-value patterns to filter data on.
