@@ -19,6 +19,8 @@ pip3 install https://github.com/sagecontinuum/sage-data-client/releases/download
 
 ## Usage Examples
 
+### Query API
+
 ```python
 import sage_data_client
 
@@ -50,6 +52,20 @@ df = sage_data_client.query(
         "name": "env.raingauge.*",
     }
 )
+
+# print number of results of each name
+print(df.groupby(["meta.node", "name"]).size())
+```
+
+### Load local file
+
+If we have saved the results of a query to a file `data.json`, we can also load using the `load` function as follows:
+
+```python
+import sage_data_client
+
+# load results from local file
+df = sage_data_client.load("data.json")
 
 # print number of results of each name
 print(df.groupby(["meta.node", "name"]).size())
