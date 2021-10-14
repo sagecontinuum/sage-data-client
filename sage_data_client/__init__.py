@@ -14,10 +14,14 @@ def query(start, end=None, tail=None, filter=None, endpoint="https://data.sageco
     if tail is not None:
         q["tail"] = tail
 
-    # do query
-    data = json.dumps(q).encode()
-    with urlopen(endpoint, data) as f:
-        df = pd.read_json(f, lines=True, date_unit="ns")
+    request_body = json.dumps(q).encode()
+    with urlopen(endpoint, request_body) as f:
+        return load(f)
+
+
+def load(path_or_buf) -> pd.DataFrame:
+    """load reads a path or file like object containing a response from the data api and returns the results in a data frame."""
+    df = pd.read_json(path_or_buf, lines=True, date_unit="ns")
 
     # if dataframe is empty, return empty with known columns
     if len(df) == 0:
