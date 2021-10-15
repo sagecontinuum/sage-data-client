@@ -1,10 +1,73 @@
+"""
+sage_data_client - Official Sage Python data API client.
+========================================================
+
+sage_data_client goals are to make writing queries and working with the results easy. It does this by:
+
+* Providing a simple query function which talks to the data API.
+* Providing the results in an easy to use [Pandas](https://pandas.pydata.org) data frame.
+
+Functions
+---------
+* query - Query the Sage data API and returns results in a Pandas data frame.
+* load - Load saved data API response from a path of file like object.
+"""
 from urllib.request import urlopen
 import json
 import pandas as pd
 
 
-def query(start, end=None, tail=None, filter=None, endpoint="https://data.sagecontinuum.org/api/v1/query") -> pd.DataFrame:
-    """query makes a query request to the data API and returns the results in a data frame."""
+def query(start:str, end:str=None, tail:int=None, filter:dict=None, endpoint:str="https://data.sagecontinuum.org/api/v1/query") -> pd.DataFrame:
+    """
+    query makes a query request to the data API and returns the results in a data frame.
+
+    Parameters
+    ----------
+    start : query start time, required
+        Timestamps can be a relative like "-1h" or absolute like "2021-05-01T10:30:00Z".
+    
+    end : query end time, default: None
+        Timestamps can be a relative like "-1h" or absolute like "2021-05-01T10:30:00Z".
+    
+    tail : limit query response to latest tail records, default: None
+    
+    filter : dictionary of query filters, default: None
+    
+    endpoint : url of query api, default: "https://data.sagecontinuum.org/api/v1/query"
+
+    Returns
+    -------
+    result : pandas.DataFrame
+        The data frame will contain the query response records.
+        
+        See the Returns section for the `load` function for more details.
+
+    Examples
+    --------
+
+    Querying and perform simple data aggregation
+
+    ```python
+    import sage_data_client
+
+    # query and load data into pandas data frame
+    df = sage_data_client.query(
+        start="-1h",
+        filter={
+            "name": "env.temperature",
+        }
+    )
+
+    # print results in data frame
+    print(df)
+
+    # meta columns are expanded into meta.fieldname. for example, here we print the unique nodes
+    print(df["meta.node"].unique())
+
+    # print stats of the temperature data grouped by node + sensor.
+    print(df.groupby(["meta.node", "meta.sensor"]).value.agg(["size", "min", "max", "mean"]))
+    ```
+    """
     # build query
     q = {"start": start}
     if end is not None:
@@ -20,7 +83,43 @@ def query(start, end=None, tail=None, filter=None, endpoint="https://data.sageco
 
 
 def load(path_or_buf) -> pd.DataFrame:
-    """load reads a path or file like object containing a response from the data api and returns the results in a data frame."""
+    """
+    load reads a path or file like object containing a response from the data api and returns the results in a data frame.
+
+    Parameters
+    ----------
+    path_or_buf : path like or file like object
+
+    Returns
+    -------
+    result : pandas.DataFrame
+        The data frame will contain the query response records. Standard columns names are:
+        
+        `name`: measurement name (ex. "env.temperature")
+        
+        `timestamp`: measurement timestamp (nanoseconds since epoch resolution)
+        
+        `value`: measurement value
+        
+        Metadata fields like "node" and "vsn" are stored in columns named "meta.node" or "meta.vsn".
+
+    Examples
+    --------
+
+    Loading saved query results from a a file
+
+    Suppose we've saved the results of a query to a file `data.json`. We can load them using the following:
+
+    ```python
+    import sage_data_client
+
+    # load results from local file
+    df = sage_data_client.load("data.json")
+
+    # print number of results of each name
+    print(df.groupby(["meta.node", "name"]).size())
+    ```
+    """
     df = pd.read_json(path_or_buf, lines=True, date_unit="ns")
 
     # if dataframe is empty, return empty with known columns
