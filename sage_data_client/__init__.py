@@ -6,11 +6,6 @@ sage_data_client goals are to make writing queries and working with the results 
 
 * Providing a simple query function which talks to the data API.
 * Providing the results in an easy to use [Pandas](https://pandas.pydata.org) data frame.
-
-Functions
----------
-* query - Query the Sage data API and returns results in a Pandas data frame.
-* load - Load saved data API response from a path of file like object.
 """
 from urllib.request import urlopen
 import json
