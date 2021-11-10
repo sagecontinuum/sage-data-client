@@ -12,7 +12,7 @@ import json
 import pandas as pd
 
 
-def query(start:str, end:str=None, tail:int=None, filter:dict=None, endpoint:str="https://data.sagecontinuum.org/api/v1/query") -> pd.DataFrame:
+def query(start:str, end:str=None, tail:int=None, bucket:str=None, filter:dict=None, endpoint:str="https://data.sagecontinuum.org/api/v1/query") -> pd.DataFrame:
     """
     query makes a query request to the data API and returns the results in a data frame.
 
@@ -25,6 +25,8 @@ def query(start:str, end:str=None, tail:int=None, filter:dict=None, endpoint:str
         Timestamps can be a relative like "-1h" or absolute like "2021-05-01T10:30:00Z".
     
     tail : limit query response to latest tail records, default: None
+
+    bucket: name of bucket to query
     
     filter : dictionary of query filters, default: None
     
@@ -71,6 +73,8 @@ def query(start:str, end:str=None, tail:int=None, filter:dict=None, endpoint:str
         q["filter"] = filter
     if tail is not None:
         q["tail"] = tail
+    if bucket is not None:
+        q["bucket"] = bucket
 
     request_body = json.dumps(q).encode()
     with urlopen(endpoint, request_body) as f:
