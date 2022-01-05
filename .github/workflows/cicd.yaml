@@ -37,7 +37,7 @@ jobs:
       - name: Install package
         run: pip3 install dist/*.whl
       - name: Test package
-        run: python3 -m unittest discover -s tests
+        run: python3 -m unittest discover tests
   release:
     name: Release
     runs-on: ubuntu-latest
