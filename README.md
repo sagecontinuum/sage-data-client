@@ -51,6 +51,8 @@ df = sage_data_client.query(
 print(df.groupby(["meta.node", "name"]).size())
 ```
 
+Additional examples can be found in the [examples](https://github.com/sagecontinuum/sage-data-client/examples) directory.
+
 ### Load results from file
 
 If we have saved the results of a query to a file `data.json`, we can also load using the `load` function as follows:
