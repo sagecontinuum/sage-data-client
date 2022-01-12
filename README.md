@@ -30,10 +30,10 @@ df = sage_data_client.query(
 print(df)
 
 # meta columns are expanded into meta.fieldname. for example, here we print the unique nodes
-print(df["meta.node"].unique())
+print(df["meta.vsn"].unique())
 
 # print stats of the temperature data grouped by node + sensor.
-print(df.groupby(["meta.node", "meta.sensor"]).value.agg(["size", "min", "max", "mean"]))
+print(df.groupby(["meta.vsn", "meta.sensor"]).value.agg(["size", "min", "max", "mean"]))
 ```
 
 ```python
@@ -48,7 +48,7 @@ df = sage_data_client.query(
 )
 
 # print number of results of each name
-print(df.groupby(["meta.node", "name"]).size())
+print(df.groupby(["meta.vsn", "name"]).size())
 ```
 
 ### Load results from file
@@ -62,7 +62,7 @@ import sage_data_client
 df = sage_data_client.load("data.json")
 
 # print number of results of each name
-print(df.groupby(["meta.node", "name"]).size())
+print(df.groupby(["meta.vsn", "name"]).size())
 ```
 
 ### Additional Examples

@@ -1,3 +1,7 @@
+"""
+This example demonstrates one approach for combining multiple queries by resampling
+results into 30 minute windows and merging those into a new data frame.
+"""
 import sage_data_client
 import pandas as pd
 
