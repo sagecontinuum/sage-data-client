@@ -26,6 +26,7 @@ def main():
     end = "2022-01-11T00:00:00Z"
     vsn = "W023"
 
+    # combine lat, lon, temperature, pressure and humidity into data frame
     df = join_resampled_queries(start, end, "30min", {
         "lat": {
             "name": "sys.gps.lat",
