@@ -1,17 +1,99 @@
 import unittest
 import sage_data_client
 from io import StringIO
+from datetime import datetime, timedelta
+import pandas as pd
 
 
 class TestQuery(unittest.TestCase):
 
-    def test_query(self):
-        df = sage_data_client.query(start="-5m", filter={
-            "name": "env.temperature",
-        })
+    def assertValueResponse(self, df):
         self.assertIn("name", df.columns)
+        df.name.str
         self.assertIn("timestamp", df.columns)
+        df.timestamp.dt
         self.assertIn("value", df.columns)
+    
+    def test_empty_response(self):
+        self.assertValueResponse(sage_data_client.query(
+            start="-2000d",
+            filter={
+            "name": "should.not.every.exist.XYZ",
+        }))
+
+    def test_queries(self):
+        self.assertValueResponse(sage_data_client.query(
+            start="2021-01-01T10:30:00",
+            end="2021-01-01T10:31:00",
+            filter={
+            "name": "env.temperature",
+        }))
+
+        self.assertValueResponse(sage_data_client.query(
+            start="2021-01-01T10:30:00Z",
+            end="2021-01-01T10:31:00Z",
+            filter={
+            "name": "env.temperature",
+        }))
+
+        self.assertValueResponse(sage_data_client.query(
+            start="2021-01-01T10:30:00.123Z",
+            end="2021-01-01T10:31:00.123Z",
+            filter={
+            "name": "env.temperature",
+        }))
+
+        self.assertValueResponse(sage_data_client.query(
+            start="2021-01-01T10:30:00.123456Z",
+            end="2021-01-01T10:31:00.123456Z",
+            filter={
+            "name": "env.temperature",
+        }))
+
+        self.assertValueResponse(sage_data_client.query(
+            start="2021-01-01 10:30:00",
+            end="2021-01-01 10:31:00",
+            filter={
+            "name": "env.temperature",
+        }))
+
+        self.assertValueResponse(sage_data_client.query(
+            start=datetime(2021, 1, 1, 10, 31, 0),
+            end=datetime(2021, 1, 1, 10, 32, 0),
+            filter={
+            "name": "env.temperature",
+        }))
+
+        self.assertValueResponse(sage_data_client.query(
+            start=pd.to_datetime("2021-01-01 10:30:00"),
+            end=pd.to_datetime("2021-01-01 10:31:00"),
+            filter={
+            "name": "env.temperature",
+        }))
+
+        for dt in ["-30s", "-3m", "-3min", "-1d", "-1w"]:
+            self.assertValueResponse(sage_data_client.query(
+                start=dt,
+                tail=1,
+                filter={
+                "name": "env.temperature",
+            }))
+
+        self.assertValueResponse(sage_data_client.query(
+            start="-4h",
+            end="-2h",
+            tail=1,
+            filter={
+            "name": "env.temperature",
+        }))
+
+        for dt in [timedelta(seconds=-30), timedelta(minutes=-1), timedelta(hours=-1), timedelta(days=-1)]:
+            self.assertValueResponse(sage_data_client.query(
+                start=dt,
+                tail=1,
+                filter={
+                "name": "env.temperature",
+            }))
 
     def test_load(self):
         sample_data = StringIO("""
