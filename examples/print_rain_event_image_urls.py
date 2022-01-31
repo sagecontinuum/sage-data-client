@@ -2,7 +2,7 @@
 This example demonstrates cross referencing rain gauge data to find rainy images. It outputs a list
 of urls which can be saved and downloaded as follows:
 
-python3 find_rain_images.py > urls.txt
+python3 print_rain_event_image_urls.py > urls.txt
 wget -r -N -i urls.txt
 """
 import sage_data_client
