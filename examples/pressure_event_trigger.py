@@ -5,6 +5,9 @@ pressure events.
 In this case, events are determined windows with a stddev above an example
 threshold. For applications, you will need to provide your own criteria for
 events.
+
+Additionally, you will need to provide a specific mechanism to carry out the
+alerts (ex. email, Slack, dedicated alerting / ticketing system, etc).
 """
 import sage_data_client
 import time
