@@ -10,7 +10,7 @@ import sage_data_client
 import time
 
 while True:
-    # query recent pressure data
+    # query pressure data in recent 10 minute window
     df = sage_data_client.query(
         start="-10m",
         filter={
@@ -22,7 +22,7 @@ while True:
     # compute stddev for nodes' pressure data in window
     std = df.groupby("meta.vsn").value.std()
 
-    # find all events events exceeding an example threshold
+    # find all pressure events exceeding an example threshold
     events = std[std > 8.0]
 
     # "post" vsn to alert system
