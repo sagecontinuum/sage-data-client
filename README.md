@@ -65,6 +65,12 @@ df = sage_data_client.load("data.json")
 print(df.groupby(["meta.vsn", "name"]).size())
 ```
 
+### Integration with Notebooks
+
+Since we leverage the fantastic work provided by the Pandas library, performing things like looking at dataframes or creating plots is easy.
+
+A basic example of querying and plotting data can be found [here](https://github.com/sagecontinuum/sage-data-client/blob/main/examples/plotting_example.ipynb).
+
 ### Additional Examples
 
 Additional code examples can be found in the [examples](https://github.com/sagecontinuum/sage-data-client/tree/main/examples) directory.
