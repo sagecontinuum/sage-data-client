@@ -8,7 +8,7 @@ def resolve_time(t):
         return pd.to_datetime(t)
     except (TypeError, ValueError):
         pass
-    return pd.to_datetime("now") + pd.to_timedelta(t)
+    return pd.Timestamp.now() + pd.to_timedelta(t)
 
 
 def timestr(t):
