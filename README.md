@@ -75,7 +75,7 @@ A basic example of querying and plotting data can be found [here](https://github
 
 Additional code examples can be found in the [examples](https://github.com/sagecontinuum/sage-data-client/tree/main/examples) directory.
 
-If you're interested in contributing your own examples, feel free to add them to `examples/contrib` and open a PR!
+If you're interested in contributing your own examples, feel free to add them to [examples/contrib](https://github.com/sagecontinuum/sage-data-client/tree/main/examples/contrib) and open a PR!
 
 ## Reference
 
