@@ -83,5 +83,6 @@ The `query` function accepts the following arguments:
 
 * `start`. Absolute or relative start timestamp. (**required**)
 * `end`. Absolute or relative end timestamp.
-* `tail`. Limit results to `tail` most recent values per series.
+* `head`. Limit results to `head` earliest values per series. (Only one of `head` or `tail` can be provided.)
+* `tail`. Limit results to `tail` latest values per series. (Only one of `head` or `tail` can be provided.)
 * `filter`. Key-value patterns to filter data on.
