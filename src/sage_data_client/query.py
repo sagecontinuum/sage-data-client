@@ -15,7 +15,7 @@ def timestr(t):
     return t.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
-def query(start, end = None, tail: int = None, bucket: str = None, filter: dict = None,
+def query(start, end = None, head: int = None, tail: int = None, bucket: str = None, filter: dict = None,
     endpoint: str = "https://data.sagecontinuum.org/api/v1/query") -> pd.DataFrame:
     """
     query makes a query request to the data API and returns the results in a data frame.
@@ -28,7 +28,9 @@ def query(start, end = None, tail: int = None, bucket: str = None, filter: dict 
     end : query end time, default: None
         Timestamps can be a relative like "-1h" or absolute like "2021-05-01T10:30:00Z".
 
-    tail : limit query response to latest tail records, default: None
+    head : limit query response to earliest `head` records, default: None (only one of `head` or `tail` can be provided)
+
+    tail : limit query response to latest `tail` records, default: None (only one of `head` or `tail` can be provided)
 
     bucket: name of bucket to query
 
@@ -75,6 +77,10 @@ def query(start, end = None, tail: int = None, bucket: str = None, filter: dict 
         q["end"] = timestr(resolve_time(end))
     if filter is not None:
         q["filter"] = filter
+    if head is not None and tail is not None:
+        raise ValueError("only one of `head` or `tail` can be provided")
+    if head is not None:
+        q["head"] = head
     if tail is not None:
         q["tail"] = tail
     if bucket is not None:

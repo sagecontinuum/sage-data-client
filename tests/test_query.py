@@ -21,6 +21,17 @@ class TestQuery(unittest.TestCase):
             "name": "should.not.every.exist.XYZ",
         }))
 
+    def test_check_one_of_head_or_tail(self):
+        with self.assertRaises(ValueError):
+            sage_data_client.query(
+                start="2021-01-01T10:30:00",
+                end="2021-01-01T10:31:00",
+                head=3,
+                tail=3,
+                filter={
+                    "name": "env.temperature",
+            })
+
     def test_queries(self):
         self.assertValueResponse(sage_data_client.query(
             start="2021-01-01T10:30:00",
