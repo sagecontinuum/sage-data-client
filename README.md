@@ -75,11 +75,14 @@ A basic example of querying and plotting data can be found [here](https://github
 
 Additional code examples can be found in the [examples](https://github.com/sagecontinuum/sage-data-client/tree/main/examples) directory.
 
+If you're interested in contributing your own examples, feel free to add them to [examples/contrib](https://github.com/sagecontinuum/sage-data-client/tree/main/examples/contrib) and open a PR!
+
 ## Reference
 
 The `query` function accepts the following arguments:
 
 * `start`. Absolute or relative start timestamp. (**required**)
 * `end`. Absolute or relative end timestamp.
-* `tail`. Limit results to `tail` most recent values per series.
+* `head`. Limit results to `head` earliest values per series. (Only one of `head` or `tail` can be provided.)
+* `tail`. Limit results to `tail` latest values per series. (Only one of `head` or `tail` can be provided.)
 * `filter`. Key-value patterns to filter data on.
