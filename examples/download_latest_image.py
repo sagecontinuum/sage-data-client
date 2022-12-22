@@ -6,7 +6,6 @@ Created on Thu Dec 22 08:34:21 2022
 import sage_data_client
 import os
 import urllib
-import cv2
 
 
 # 1. Checks Sage camera  images from last one hour and downloads. 
