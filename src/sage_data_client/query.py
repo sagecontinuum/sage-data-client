@@ -15,8 +15,15 @@ def timestr(t):
     return t.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
-def query(start, end = None, head: int = None, tail: int = None, bucket: str = None, filter: dict = None,
-    endpoint: str = "https://data.sagecontinuum.org/api/v1/query") -> pd.DataFrame:
+def query(
+    start,
+    end=None,
+    head: int = None,
+    tail: int = None,
+    bucket: str = None,
+    filter: dict = None,
+    endpoint: str = "https://data.sagecontinuum.org/api/v1/query",
+) -> pd.DataFrame:
     """
     query makes a query request to the data API and returns the results in a data frame.
 
@@ -133,11 +140,13 @@ def load(path_or_buf) -> pd.DataFrame:
 
     # if dataframe is empty, return empty with known columns
     if len(df) == 0:
-        return pd.DataFrame({
-            "timestamp": pd.to_datetime([], utc=True),
-            "name": pd.Series([], dtype=str),
-            "value": [],
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": pd.to_datetime([], utc=True),
+                "name": pd.Series([], dtype=str),
+                "value": [],
+            }
+        )
 
     # ensure timestamp is in proper format
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
