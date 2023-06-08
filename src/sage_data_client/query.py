@@ -1,6 +1,7 @@
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 import json
 import pandas as pd
+from typing import Optional
 
 
 def resolve_time(t):
@@ -93,18 +94,29 @@ def query(
     if bucket is not None:
         q["bucket"] = bucket
 
-    request_body = json.dumps(q).encode()
-    with urlopen(endpoint, request_body) as f:
-        return load(f)
+    data = json.dumps(q).encode()
+    headers = {"Accept-Encoding": "gzip"}
+    req = Request(endpoint, data, headers=headers)
+
+    with urlopen(req) as f:
+        # determine compression type
+        content_encoding = f.headers.get("Content-Encoding", "")
+        if "gzip" in content_encoding:
+            compression = "gzip"
+        else:
+            compression = None
+        return load(f, compression=compression)
 
 
-def load(path_or_buf) -> pd.DataFrame:
+def load(path_or_buf, compression: Optional[str] = None) -> pd.DataFrame:
     """
     load reads a path or file like object containing a response from the data api and returns the results in a data frame.
 
     Parameters
     ----------
     path_or_buf : path like or file like object
+
+    compression : specify compression type (ex. gzip). this will automatically be inferred when using a path.
 
     Returns
     -------
@@ -122,7 +134,7 @@ def load(path_or_buf) -> pd.DataFrame:
     Examples
     --------
 
-    Loading saved query results from a a file
+    Loading saved query results from a file
 
     Suppose we've saved the results of a query to a file `data.json`. We can load them using the following:
 
@@ -136,7 +148,13 @@ def load(path_or_buf) -> pd.DataFrame:
     print(df.groupby(["meta.node", "name"]).size())
     ```
     """
-    df = pd.read_json(path_or_buf, lines=True, date_unit="ns", dtype={"name": str})
+    df = pd.read_json(
+        path_or_buf,
+        lines=True,
+        date_unit="ns",
+        dtype={"name": str},
+        compression=compression,
+    )
 
     # if dataframe is empty, return empty with known columns
     if len(df) == 0:
