@@ -154,6 +154,7 @@ def load(path_or_buf, compression: Optional[str] = None) -> pd.DataFrame:
         date_unit="ns",
         dtype={"name": str},
         compression=compression,
+        engine="pyarrow",
     )
 
     # if dataframe is empty, return empty with known columns
