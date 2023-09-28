@@ -1,8 +1,8 @@
-from urllib.request import urlopen, Request
-import json
-import pandas as pd
-from pyarrow.lib import ArrowInvalid
 from gzip import GzipFile
+import json
+from pathlib import Path
+from urllib.request import urlopen, Request
+import pandas as pd
 
 
 def resolve_time(t):
@@ -114,8 +114,6 @@ def load(path_or_buf) -> pd.DataFrame:
     ----------
     path_or_buf : path like or file like object
 
-    compression : specify compression type (ex. gzip). this will automatically be inferred when using a path.
-
     Returns
     -------
     result : pandas.DataFrame
@@ -140,39 +138,53 @@ def load(path_or_buf) -> pd.DataFrame:
     import sage_data_client
 
     # load results from local file
-    df = sage_data_client.load("data.json")
+    df = sage_data_client.load("data.ndjson")
 
     # print number of results of each name
     print(df.groupby(["meta.node", "name"]).size())
     ```
     """
-    try:
-        df = pd.read_json(
-            path_or_buf,
-            lines=True,
-            date_unit="ns",
-            dtype={"name": str},
-            engine="pyarrow",
+    if isinstance(path_or_buf, str):
+        if path_or_buf.endswith(".gz"):
+            with GzipFile(path_or_buf, "rb") as f:
+                return _load(f)
+        else:
+            with open(path_or_buf, "rb") as f:
+                return _load(f)
+
+    if isinstance(path_or_buf, Path):
+        if path_or_buf.suffix == ".gz":
+            with GzipFile(path_or_buf, "rb") as f:
+                return _load(f)
+        else:
+            with open(path_or_buf, "rb") as f:
+                return _load(f)
+
+    return _load(path_or_buf)
+
+
+def _load_row(r):
+    input = json.loads(r)
+    output = {}
+    output["timestamp"] = pd.to_datetime(input["timestamp"], unit="ns", utc=True)
+    output["name"] = input["name"]
+    output["value"] = input["value"]
+    for k, v in input["meta"].items():
+        output[f"meta.{k}"] = v
+    return output
+
+
+def _load(fileobj) -> pd.DataFrame:
+    df = pd.DataFrame(map(_load_row, fileobj))
+
+    # if dataframe is empty, return empty with known columns
+    if len(df) == 0:
+        return pd.DataFrame(
+            {
+                "timestamp": pd.to_datetime([], utc=True),
+                "name": pd.Series([], dtype=str),
+                "value": [],
+            }
         )
-    except ArrowInvalid as exc:
-        e = str(exc)
-        if e == "Empty JSON file":
-            # if dataframe is empty, return empty with known columns
-            return pd.DataFrame(
-                {
-                    "timestamp": pd.to_datetime([], utc=True),
-                    "name": pd.Series([], dtype=str),
-                    "value": [],
-                }
-            )
-        raise
 
-    # ensure timestamp is in proper format
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-
-    # otherwise, normalize meta columns to meta.* columns
-    meta = pd.DataFrame(df["meta"].tolist())
-    meta.rename({c: "meta." + c for c in meta.columns}, axis="columns", inplace=True)
-    df = df.join(meta)
-    df.drop(columns=["meta"], inplace=True)
     return df
