@@ -1,7 +1,8 @@
 from urllib.request import urlopen, Request
 import json
 import pandas as pd
-from typing import Optional
+from pyarrow.lib import ArrowInvalid
+from gzip import GzipFile
 
 
 def resolve_time(t):
@@ -99,16 +100,13 @@ def query(
     req = Request(endpoint, data, headers=headers)
 
     with urlopen(req) as f:
-        # determine compression type
         content_encoding = f.headers.get("Content-Encoding", "")
         if "gzip" in content_encoding:
-            compression = "gzip"
-        else:
-            compression = None
-        return load(f, compression=compression)
+            f = GzipFile(fileobj=f, mode="rb")
+        return load(f)
 
 
-def load(path_or_buf, compression: Optional[str] = None) -> pd.DataFrame:
+def load(path_or_buf) -> pd.DataFrame:
     """
     load reads a path or file like object containing a response from the data api and returns the results in a data frame.
 
@@ -148,24 +146,26 @@ def load(path_or_buf, compression: Optional[str] = None) -> pd.DataFrame:
     print(df.groupby(["meta.node", "name"]).size())
     ```
     """
-    df = pd.read_json(
-        path_or_buf,
-        lines=True,
-        date_unit="ns",
-        dtype={"name": str},
-        compression=compression,
-        engine="pyarrow",
-    )
-
-    # if dataframe is empty, return empty with known columns
-    if len(df) == 0:
-        return pd.DataFrame(
-            {
-                "timestamp": pd.to_datetime([], utc=True),
-                "name": pd.Series([], dtype=str),
-                "value": [],
-            }
+    try:
+        df = pd.read_json(
+            path_or_buf,
+            lines=True,
+            date_unit="ns",
+            dtype={"name": str},
+            engine="pyarrow",
         )
+    except ArrowInvalid as exc:
+        e = str(exc)
+        if e == "Empty JSON file":
+            # if dataframe is empty, return empty with known columns
+            return pd.DataFrame(
+                {
+                    "timestamp": pd.to_datetime([], utc=True),
+                    "name": pd.Series([], dtype=str),
+                    "value": [],
+                }
+            )
+        raise
 
     # ensure timestamp is in proper format
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
