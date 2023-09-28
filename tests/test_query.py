@@ -192,11 +192,15 @@ class TestQuery(unittest.TestCase):
         sample_data = BytesIO(
             b"""{"timestamp":"2021-10-14T21:42:21.149425156Z","name":"test","value":21.74,"meta":{"host":"0000dca632a3069f.ws-rpi","job":"sage","node":"000048b02d15c31f","plugin":"plugin-iio:0.4.5","sensor":"bme680","task":"iio-rpi","vsn":"W01C"}}
 {"timestamp":"2021-10-14T21:42:09.201150729Z","name":"test","value":"26.09","meta":{"host":"0000dca632a306d8.ws-rpi","job":"sage","node":"000048b02d15c31a","plugin":"plugin-iio:0.4.5","sensor":"bme680","task":"iio-shield","vsn":"W01A"}}
+{"timestamp":"2021-10-14T21:42:09.201150729Z","name":"test","value":123,"meta":{"host":"0000dca632a306d8.ws-rpi","job":"sage","node":"000048b02d15c31a","plugin":"plugin-iio:0.4.5","sensor":"bme680","task":"iio-shield","vsn":"W01A"}}
 """
         )
         df = sage_data_client.load(sample_data)
-        self.assertEqual(len(df), 2)
+        self.assertEqual(len(df), 3)
         self.assertValueResponse(df)
+        self.assertAlmostEqual(df.iloc[0].value, 21.74)
+        self.assertEqual(df.iloc[1].value, "26.09")
+        self.assertEqual(df.iloc[2].value, 123)
 
 
 if __name__ == "__main__":
