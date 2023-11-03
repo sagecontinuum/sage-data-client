@@ -4,7 +4,7 @@ to gather and aggregate internal temperature data every 5 minutes and prints all
 nodes which exceed a threshold.
 
 Although it's simple, this example could easily be extended in multiple ways. For example:
-* Instead of just printing, an alert to be posted to Slack.
+* Instead of just printing, an alert could be posted to Slack.
 * Instead of a fixed threshold, the typical value across all nodes could be used to determine outliers.
 """
 import sage_data_client
