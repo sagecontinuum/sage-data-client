@@ -1,5 +1,7 @@
-from urllib.request import urlopen
+from gzip import GzipFile
 import json
+from pathlib import Path
+from urllib.request import urlopen, Request
 import pandas as pd
 
 
@@ -15,8 +17,15 @@ def timestr(t):
     return t.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
-def query(start, end = None, head: int = None, tail: int = None, bucket: str = None, filter: dict = None,
-    endpoint: str = "https://data.sagecontinuum.org/api/v1/query") -> pd.DataFrame:
+def query(
+    start,
+    end=None,
+    head: int = None,
+    tail: int = None,
+    bucket: str = None,
+    filter: dict = None,
+    endpoint: str = "https://data.sagecontinuum.org/api/v1/query",
+) -> pd.DataFrame:
     """
     query makes a query request to the data API and returns the results in a data frame.
 
@@ -86,8 +95,14 @@ def query(start, end = None, head: int = None, tail: int = None, bucket: str = N
     if bucket is not None:
         q["bucket"] = bucket
 
-    request_body = json.dumps(q).encode()
-    with urlopen(endpoint, request_body) as f:
+    data = json.dumps(q).encode()
+    headers = {"Accept-Encoding": "gzip"}
+    req = Request(endpoint, data, headers=headers)
+
+    with urlopen(req) as f:
+        content_encoding = f.headers.get("Content-Encoding", "")
+        if "gzip" in content_encoding:
+            f = GzipFile(fileobj=f, mode="rb")
         return load(f)
 
 
@@ -115,7 +130,7 @@ def load(path_or_buf) -> pd.DataFrame:
     Examples
     --------
 
-    Loading saved query results from a a file
+    Loading saved query results from a file
 
     Suppose we've saved the results of a query to a file `data.json`. We can load them using the following:
 
@@ -123,28 +138,53 @@ def load(path_or_buf) -> pd.DataFrame:
     import sage_data_client
 
     # load results from local file
-    df = sage_data_client.load("data.json")
+    df = sage_data_client.load("data.ndjson")
 
     # print number of results of each name
     print(df.groupby(["meta.node", "name"]).size())
     ```
     """
-    df = pd.read_json(path_or_buf, lines=True, date_unit="ns", dtype={"name": str})
+    if isinstance(path_or_buf, str):
+        if path_or_buf.endswith(".gz"):
+            with GzipFile(path_or_buf, "rb") as f:
+                return _load(f)
+        else:
+            with open(path_or_buf, "rb") as f:
+                return _load(f)
+
+    if isinstance(path_or_buf, Path):
+        if path_or_buf.suffix == ".gz":
+            with GzipFile(path_or_buf, "rb") as f:
+                return _load(f)
+        else:
+            with open(path_or_buf, "rb") as f:
+                return _load(f)
+
+    return _load(path_or_buf)
+
+
+def _load_row(r):
+    input = json.loads(r)
+    output = {}
+    output["timestamp"] = pd.to_datetime(input["timestamp"], unit="ns", utc=True)
+    output["name"] = input["name"]
+    output["value"] = input["value"]
+    for k, v in input["meta"].items():
+        output[f"meta.{k}"] = v
+    return output
+
+
+def _load(fileobj) -> pd.DataFrame:
+    df = pd.DataFrame(map(_load_row, fileobj))
 
     # if dataframe is empty, return empty with known columns
     if len(df) == 0:
-        return pd.DataFrame({
-            "timestamp": pd.to_datetime([], utc=True),
-            "name": pd.Series([], dtype=str),
-            "value": [],
-        })
+        return pd.DataFrame(
+            {
+                "timestamp": pd.to_datetime([], utc=True),
+                "name": pd.Series([], dtype=str),
+                "value": [],
+            }
+        )
 
-    # ensure timestamp is in proper format
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-
-    # otherwise, normalize meta columns to meta.* columns
-    meta = pd.DataFrame(df["meta"].tolist())
-    meta.rename({c: "meta." + c for c in meta.columns}, axis="columns", inplace=True)
-    df = df.join(meta)
-    df.drop(columns=["meta"], inplace=True)
     return df
