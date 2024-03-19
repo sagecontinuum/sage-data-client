@@ -22,6 +22,7 @@ def query(
     end=None,
     head: int = None,
     tail: int = None,
+    experimental_func=None,
     bucket: str = None,
     filter: dict = None,
     endpoint: str = "https://data.sagecontinuum.org/api/v1/query",
@@ -40,6 +41,8 @@ def query(
     head : limit query response to earliest `head` records, default: None (only one of `head` or `tail` can be provided)
 
     tail : limit query response to latest `tail` records, default: None (only one of `head` or `tail` can be provided)
+
+    experimental_func : aggregation function to apply to series.
 
     bucket: name of bucket to query
 
@@ -88,10 +91,12 @@ def query(
         q["filter"] = filter
     if head is not None and tail is not None:
         raise ValueError("only one of `head` or `tail` can be provided")
-    if head is not None:
+    elif head is not None:
         q["head"] = head
-    if tail is not None:
+    elif tail is not None:
         q["tail"] = tail
+    if experimental_func is not None:
+        q["experimental_func"] = experimental_func
     if bucket is not None:
         q["bucket"] = bucket
 
