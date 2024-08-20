@@ -16,17 +16,19 @@ pip3 install sage-data-client
 If you prefer to install this package into a Python virtual environment or are unable to install it system wide, you can use use the [venv](https://docs.python.org/3/library/venv.html) module as follows:
 
 ```sh
-# create a new virtual environment called my-venv
+# 1. Create a new virtual environment called my-venv.
 python3 -m venv my-venv
 
-# activate the virtual environment
+# 2. Activate the virtual environment
 source my-venv/bin/activate
 
-# install sage data client in the virtual environment
+# 3. Install sage data client in the virtual environment
 pip3 install sage-data-client
 ```
 
-You will need to activate this virtual environment when opening a new terminal before running any Python scripts using Sage Data Client.
+Note: If you are using Linux, you may need to install the `python3-venv` package which is outside of the scope of this document.
+
+Note: You will need to activate this virtual environment when opening a new terminal before running any Python scripts using Sage Data Client.
 
 ## Usage Examples
 
