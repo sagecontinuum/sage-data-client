@@ -13,7 +13,7 @@ Sage Data Client can be installed with pip using:
 pip3 install sage-data-client
 ```
 
-If you prefer to install this package into a Python virtual environment or are unable to install it system wide, you can use use the [venv](https://docs.python.org/3/library/venv.html) module as follows:
+If you prefer to install this package into a Python virtual environment or are unable to install it system wide, you can use the [venv](https://docs.python.org/3/library/venv.html) module as follows:
 
 ```sh
 # 1. Create a new virtual environment called my-venv.
