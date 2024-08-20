@@ -1,4 +1,4 @@
-# Sage Data API Client
+# Sage Data Client
 
 This is the official Sage Python data API client. Its main goal is to make writing queries and working with the results easy. It does this by:
 
@@ -7,9 +7,26 @@ This is the official Sage Python data API client. Its main goal is to make writi
 
 ## Installation
 
+Sage Data Client can be installed with pip using:
+
 ```sh
-pip install sage-data-client
+pip3 install sage-data-client
 ```
+
+If you prefer to install this package into a Python virtual environment or are unable to install it system wide, you can use use the [venv](https://docs.python.org/3/library/venv.html) module as follows:
+
+```sh
+# create a new virtual environment called my-venv
+python3 -m venv my-venv
+
+# activate the virtual environment
+source my-venv/bin/activate
+
+# install sage data client in the virtual environment
+pip3 install sage-data-client
+```
+
+You will need to activate this virtual environment when opening a new terminal before running any Python scripts using Sage Data Client.
 
 ## Usage Examples
 
