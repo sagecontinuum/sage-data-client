@@ -4,6 +4,9 @@ from pathlib import Path
 from urllib.request import urlopen, Request
 import pandas as pd
 
+# NOTE Using the deprecated type aliases to maintain compatibility with Python 3.6
+from typing import Optional, Dict
+
 
 def resolve_time(t):
     try:
@@ -20,12 +23,13 @@ def timestr(t):
 def query(
     start,
     end=None,
-    head: int = None,
-    tail: int = None,
-    experimental_func=None,
-    bucket: str = None,
-    filter: dict = None,
+    head: Optional[int] = None,
+    tail: Optional[int] = None,
+    filter: Optional[Dict[str, str]] = None,
     endpoint: str = "https://data.sagecontinuum.org/api/v1/query",
+    bucket: Optional[str] = None,
+    experimental_func: Optional[str] = None,
+    experimental_window: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     query makes a query request to the data API and returns the results in a data frame.
@@ -42,13 +46,15 @@ def query(
 
     tail : limit query response to latest `tail` records, default: None (only one of `head` or `tail` can be provided)
 
-    experimental_func : aggregation function to apply to series.
-
-    bucket: name of bucket to query
-
     filter : dictionary of query filters, default: None
 
     endpoint : url of query api, default: "https://data.sagecontinuum.org/api/v1/query"
+
+    bucket: name of bucket to query
+
+    experimental_func : aggregation function to apply to series.
+
+    experimental_window : aggregation window to apply function over.
 
     Returns
     -------
@@ -97,6 +103,8 @@ def query(
         q["tail"] = tail
     if experimental_func is not None:
         q["experimental_func"] = experimental_func
+    if experimental_window is not None:
+        q["experimental_window"] = experimental_window
     if bucket is not None:
         q["bucket"] = bucket
 
