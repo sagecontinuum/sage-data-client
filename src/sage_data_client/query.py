@@ -9,11 +9,17 @@ from typing import Optional, Dict
 
 
 def resolve_time(t):
+    now = pd.to_datetime("now", utc=True)
+    # Explicitly check if string times start with +/- to address change in Pandas 3 behavior.
+    #  Before: pd.to_datetime("-2h") raised an exception
+    #  After:  pd.to_datetime("-2h") returns Timestamp('1-01-01 02:00:00')
+    if isinstance(t, str) and (t.startswith("+") or t.startswith("-")):
+        return now + pd.to_timedelta(t)
     try:
         return pd.to_datetime(t)
     except (TypeError, ValueError):
         pass
-    return pd.to_datetime("now", utc=True) + pd.to_timedelta(t)
+    return now + pd.to_timedelta(t)
 
 
 def timestr(t):
