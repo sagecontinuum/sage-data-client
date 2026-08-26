@@ -147,6 +147,7 @@ examples:
   sagecli download --date 2026-07-01 --vsn W020 --layout "{date}/{vsn}/{task}/{filename}" --dry-run
 
 layout variables: {vsn}, {node}, {filename}, {date}, {datetime}, {task}
+usage: sagecli download [-h] (--date DATE | --start TIME) [--end TIME] [--vsn VSN [VSN ...]] [--task TASK [TASK ...]] [--dest DIR] [--layout TEMPLATE] [--workers N] [--dry-run] [--no-skip]
 """,
     )
 
