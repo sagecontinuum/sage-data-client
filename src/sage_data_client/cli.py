@@ -58,6 +58,55 @@ def cmd_login(args):
     print("Credentials saved to {} (permissions: 600)".format(CREDENTIALS_PATH))
 
 
+_HTTP_HINTS = {
+    401: "run 'sagecli login' to set credentials",
+    403: "check 'My Nodes' at portal.sagecontinuum.org to verify access",
+    404: "file not found on server",
+    429: "rate limited — try fewer --workers or retry later",
+    500: "server error",
+    503: "server unavailable — try again later",
+}
+
+
+def _truncate_url(url, width=90):
+    if len(url) <= width:
+        return url
+    start = width // 3
+    end = width - start - 3
+    return url[:start] + "..." + url[-end:]
+
+
+def _print_error_breakdown(errors):
+    from collections import defaultdict
+    from urllib.error import HTTPError
+
+    http_groups = defaultdict(list)
+    other_errors = []
+
+    for record, exc in errors:
+        if isinstance(exc, HTTPError):
+            http_groups[exc.code].append(record)
+        else:
+            other_errors.append((record, exc))
+
+    for code, records in sorted(http_groups.items()):
+        nodes = sorted({r.vsn for r in records if r.vsn})
+        hint = _HTTP_HINTS.get(code, "HTTP error")
+        if code == 403:
+            node_str = " (nodes: {})".format(", ".join(nodes)) if nodes else ""
+            print("  HTTP 403 — not authorized{}: {} file(s)".format(node_str, len(records)), file=sys.stderr)
+        else:
+            node_str = " on {}".format(", ".join(nodes)) if nodes else ""
+            print("  HTTP {}{} ({}): {} file(s)".format(code, node_str, hint, len(records)), file=sys.stderr)
+            for r in records:
+                print("    {}".format(_truncate_url(r.url)), file=sys.stderr)
+
+    if other_errors:
+        print("  Other errors: {} file(s)".format(len(other_errors)), file=sys.stderr)
+        for record, exc in other_errors:
+            print("    {} — {}".format(_truncate_url(record.url), exc), file=sys.stderr)
+
+
 def cmd_download(args):
     # resolve time range
     if args.date:
@@ -119,6 +168,7 @@ def cmd_download(args):
         )
     except DownloadError as e:
         print("\nError: {}".format(e), file=sys.stderr)
+        _print_error_breakdown(e.errors)
         sys.exit(1)
 
 

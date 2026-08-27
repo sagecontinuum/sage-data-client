@@ -16,8 +16,7 @@ from sage_data_client.downloads import (
     query_downloads,
 )
 
-# Fake values — do not use real node VSNs or node IDs in tests.
-# Data on real nodes may be protected and require portal access.
+# Fake values... not using real node VSNs or node IDs in tests.
 TEST_VSN = "WTEST"
 TEST_VSN_2 = "WTEST2"
 TEST_NODE = "000000000000test"
@@ -206,7 +205,7 @@ class TestRetry(unittest.TestCase):
                     self.assertEqual(ctx.exception.code, 403)
                     mock_sleep.assert_not_called()
 
-    def test_403_summarized_once_per_node_in_download_all(self):
+    def test_403_errors_attached_to_download_error(self):
         from urllib.error import HTTPError
 
         rows = [
@@ -219,16 +218,16 @@ class TestRetry(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             with patch.object(DownloadRecord, "download", side_effect=err):
-                with patch("builtins.print") as mock_print:
-                    try:
-                        resp.download_all(dest=tmp)
-                    except DownloadError:
-                        pass
-                    printed = " ".join(str(c) for c in mock_print.call_args_list)
-                    # node appears once in the summary, not once per file
-                    self.assertEqual(printed.count(TEST_VSN), 1)
-                    self.assertIn("3 file(s)", printed)
-                    self.assertIn("My Nodes", printed)
+                with self.assertRaises(DownloadError) as ctx:
+                    resp.download_all(dest=tmp)
+
+        download_err = ctx.exception
+        self.assertEqual(len(download_err.errors), 3)
+        vsns = {r.vsn for r, _ in download_err.errors}
+        self.assertEqual(vsns, {TEST_VSN})
+        for _, exc in download_err.errors:
+            self.assertIsInstance(exc, HTTPError)
+            self.assertEqual(exc.code, 403)
 
     def test_sends_basic_auth_header(self):
         import base64
