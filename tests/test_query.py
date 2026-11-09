@@ -1,8 +1,12 @@
 import unittest
+import os
 import sage_data_client
 from io import BytesIO
 from datetime import datetime, timedelta
 import pandas as pd
+
+
+LIVE_ENDPOINT = os.environ.get("SAGE_DATA_CLIENT_TEST_ENDPOINT")
 
 
 class TestQuery(unittest.TestCase):
@@ -13,9 +17,11 @@ class TestQuery(unittest.TestCase):
         df.timestamp.dt
         self.assertIn("value", df.columns)
 
+    @unittest.skipUnless(LIVE_ENDPOINT, "set SAGE_DATA_CLIENT_TEST_ENDPOINT for live queries")
     def test_empty_response(self):
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start="-2000d",
                 filter={
                     "name": "should.not.every.exist.XYZ",
@@ -35,9 +41,11 @@ class TestQuery(unittest.TestCase):
                 },
             )
 
+    @unittest.skipUnless(LIVE_ENDPOINT, "set SAGE_DATA_CLIENT_TEST_ENDPOINT for live queries")
     def test_queries(self):
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start="2021-01-01T10:30:00",
                 end="2021-01-01T10:31:00",
                 filter={
@@ -48,6 +56,7 @@ class TestQuery(unittest.TestCase):
 
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start="2021-01-01T10:30:00Z",
                 end="2021-01-01T10:31:00Z",
                 filter={
@@ -58,6 +67,7 @@ class TestQuery(unittest.TestCase):
 
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start="2021-01-01T10:30:00.123Z",
                 end="2021-01-01T10:31:00.123Z",
                 filter={
@@ -68,6 +78,7 @@ class TestQuery(unittest.TestCase):
 
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start="2021-01-01T10:30:00.123456Z",
                 end="2021-01-01T10:31:00.123456Z",
                 filter={
@@ -78,6 +89,7 @@ class TestQuery(unittest.TestCase):
 
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start="2021-01-01 10:30:00",
                 end="2021-01-01 10:31:00",
                 filter={
@@ -88,6 +100,7 @@ class TestQuery(unittest.TestCase):
 
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start=datetime(2021, 1, 1, 10, 31, 0),
                 end=datetime(2021, 1, 1, 10, 32, 0),
                 filter={
@@ -98,6 +111,7 @@ class TestQuery(unittest.TestCase):
 
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start=pd.to_datetime("2021-01-01 10:30:00"),
                 end=pd.to_datetime("2021-01-01 10:31:00"),
                 filter={
@@ -109,6 +123,7 @@ class TestQuery(unittest.TestCase):
         for dt in ["-30s", "-3m", "-3min", "-1d", "-1w"]:
             self.assertValueResponse(
                 sage_data_client.query(
+                    endpoint=LIVE_ENDPOINT,
                     start=dt,
                     tail=1,
                     filter={
@@ -119,6 +134,7 @@ class TestQuery(unittest.TestCase):
 
         self.assertValueResponse(
             sage_data_client.query(
+                endpoint=LIVE_ENDPOINT,
                 start="-4h",
                 end="-2h",
                 tail=1,
@@ -136,6 +152,7 @@ class TestQuery(unittest.TestCase):
         ]:
             self.assertValueResponse(
                 sage_data_client.query(
+                    endpoint=LIVE_ENDPOINT,
                     start=dt,
                     tail=1,
                     filter={
@@ -187,6 +204,16 @@ class TestQuery(unittest.TestCase):
         self.assertEqual(len(df2), 1611)
         # NOTE In Pandas Nones and NaNs do not equal themselves, so will fill them to make df1 == df2 work.
         self.assertTrue((df1.fillna("") == df2.fillna("")).all().all())
+
+    def test_load_path_objects_and_leave_streams_open(self):
+        from pathlib import Path
+
+        for name in ("test-data.ndjson", "test-data.ndjson.gz", "test-empty.ndjson", "test-empty.ndjson.gz"):
+            path = Path("tests") / name
+            pd.testing.assert_frame_equal(sage_data_client.load(path), sage_data_client.load(str(path)))
+        with BytesIO(b"") as stream:
+            self.assertTrue(sage_data_client.load(stream).empty)
+            self.assertFalse(stream.closed)
 
     def test_mixed_types(self):
         sample_data = BytesIO(

@@ -8,3 +8,5 @@ sage_data_client goals are to make writing queries and working with the results 
 * Providing the results in an easy to use [Pandas](https://pandas.pydata.org) data frame.
 """
 from .query import query, load
+
+__all__ = ["query", "load"]

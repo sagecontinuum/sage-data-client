@@ -1,14 +1,18 @@
+"""HTTP query construction, timestamp bounds, and response negotiation."""
+
 from gzip import GzipFile
 import json
-from pathlib import Path
-from urllib.request import urlopen, Request
+from typing import Dict, Optional
+from urllib.request import Request, urlopen
+
 import pandas as pd
 
-# NOTE Using the deprecated type aliases to maintain compatibility with Python 3.6
-from typing import Optional, Dict
+from ._arrow import _load_arrow
+from ._ndjson import load
 
 
 def resolve_time(t):
+    """Resolve absolute or relative input using the existing pandas semantics."""
     now = pd.to_datetime("now", utc=True)
     # Explicitly check if string times start with +/- to address change in Pandas 3 behavior.
     #  Before: pd.to_datetime("-2h") raised an exception
@@ -23,7 +27,10 @@ def resolve_time(t):
 
 
 def timestr(t):
-    return t.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    """Format a query bound as a UTC ISO timestamp at its existing precision."""
+    stamp = pd.Timestamp(t)
+    stamp = stamp.tz_localize("UTC") if stamp.tzinfo is None else stamp.tz_convert("UTC")
+    return stamp.isoformat().replace("+00:00", "Z")
 
 
 def query(
@@ -115,95 +122,18 @@ def query(
         q["bucket"] = bucket
 
     data = json.dumps(q).encode()
-    headers = {"Accept-Encoding": "gzip"}
+    headers = {
+        "Accept": "application/vnd.apache.arrow.stream, application/x-ndjson;q=0.1",
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/json",
+    }
     req = Request(endpoint, data, headers=headers)
 
-    with urlopen(req) as f:
-        content_encoding = f.headers.get("Content-Encoding", "")
-        if "gzip" in content_encoding:
-            f = GzipFile(fileobj=f, mode="rb")
-        return load(f)
-
-
-def load(path_or_buf) -> pd.DataFrame:
-    """
-    load reads a path or file like object containing a response from the data api and returns the results in a data frame.
-
-    Parameters
-    ----------
-    path_or_buf : path like or file like object
-
-    Returns
-    -------
-    result : pandas.DataFrame
-        The data frame will contain the query response records. Standard columns names are:
-
-        `name`: measurement name (ex. "env.temperature")
-
-        `timestamp`: measurement timestamp (nanoseconds since epoch resolution)
-
-        `value`: measurement value
-
-        Metadata fields like "node" and "vsn" are stored in columns named "meta.node" or "meta.vsn".
-
-    Examples
-    --------
-
-    Loading saved query results from a file
-
-    Suppose we've saved the results of a query to a file `data.json`. We can load them using the following:
-
-    ```python
-    import sage_data_client
-
-    # load results from local file
-    df = sage_data_client.load("data.ndjson")
-
-    # print number of results of each name
-    print(df.groupby(["meta.node", "name"]).size())
-    ```
-    """
-    if isinstance(path_or_buf, str):
-        if path_or_buf.endswith(".gz"):
-            with GzipFile(path_or_buf, "rb") as f:
-                return _load(f)
-        else:
-            with open(path_or_buf, "rb") as f:
-                return _load(f)
-
-    if isinstance(path_or_buf, Path):
-        if path_or_buf.suffix == ".gz":
-            with GzipFile(path_or_buf, "rb") as f:
-                return _load(f)
-        else:
-            with open(path_or_buf, "rb") as f:
-                return _load(f)
-
-    return _load(path_or_buf)
-
-
-def _load_row(r):
-    input = json.loads(r)
-    output = {}
-    output["timestamp"] = pd.to_datetime(input["timestamp"], unit="ns", utc=True)
-    output["name"] = input["name"]
-    output["value"] = input["value"]
-    for k, v in input["meta"].items():
-        output[f"meta.{k}"] = v
-    return output
-
-
-def _load(fileobj) -> pd.DataFrame:
-    df = pd.DataFrame(map(_load_row, fileobj))
-
-    # if dataframe is empty, return empty with known columns
-    if len(df) == 0:
-        return pd.DataFrame(
-            {
-                "timestamp": pd.to_datetime([], utc=True),
-                "name": pd.Series([], dtype=str),
-                "value": [],
-            }
-        )
-
-    return df
+    with urlopen(req) as response:
+        media = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        loader = _load_arrow if media == "application/vnd.apache.arrow.stream" else load
+        encoding = response.headers.get("Content-Encoding", "").lower()
+        if "gzip" in encoding:
+            with GzipFile(fileobj=response, mode="rb") as body:
+                return loader(body)
+        return loader(response)
